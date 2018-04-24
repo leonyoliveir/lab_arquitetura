@@ -8,10 +8,10 @@ module maindec(input logic [5:0] op,
                 output logic [1:0] aluop,
                 output logic pcsrc);
 
-  logic [8:0] controls;
+  logic [14:0] controls;
   assign {regwrite, regdst, alusrcA, alusrcB, branch, memwrite, memtoreg, iord, jump, pcwrite, irwrite, aluop, pcsrc} = controls;
 
-  typedef enum logic [3:0] {FETCH, DECODE, MEMADR, MEMREAD, MEMWRITEBACK, MEMWRITE, EXECUTE, ALUWRITEBACK, BRANCH} statetype;
+  typedef enum logic [3:0] {FETCH, DECODE, MEMADR, MEMREAD, MEMWRITEBACK, MEMWRITE, EXECUTE, ALUWRITEBACK, BRANCH, ADDIEX} statetype;
   statetype [3:0] state, nextstate;
   
   always_ff @ (posedge clk, posedge reset)
@@ -21,14 +21,26 @@ module maindec(input logic [5:0] op,
   always_comb
     case(state)
       FETCH: nextstate <= DECODE;
-      DECODE: 
-        if(op == 6'b100011 || op == 6'b101011) nextstate <= MEMADR;
-        else if (op == 6'b000000) nextstate <= EXECUTE;
-        else if (op == 6'b000100) nextstate <= BRANCH;
-        else nextstate <= FETCH;
+      DECODE:
+          case(op)
+            6'b100011: nextstate <= MEMADR;
+            6'b101011: nextstate <= MEMADR;
+            6'b000000: nextstate <= EXECUTE;
+            6'b000100: nextstate <= BRANCH;
+            6'b001000: nextstate <= ADDIEX;
+            default: nextstate <= FETCH;
+        endcase
+            
+        //if(op === 6'b100011 || op === 6'b101011) nextstate <= MEMADR;
+       // else if (op === 6'b000000) nextstate <= EXECUTE;
+       // else if (op === 6'b000100) nextstate <= BRANCH;
+       // else begin
+        //  nextstate <= FETCH;
+        //  $display("Here");
+       // end
       MEMADR: 
-        if (op == 6'b100011) nextstate <= MEMREAD;
-        else if (op == 6'b101011) nextstate <= MEMWRITE;
+        if (op === 6'b100011) nextstate <= MEMREAD;
+        else if (op === 6'b101011) nextstate <= MEMWRITE;
       MEMREAD: nextstate <= MEMWRITEBACK;
       MEMWRITE: nextstate <= FETCH;
       MEMWRITEBACK: nextstate <= FETCH;
@@ -49,6 +61,7 @@ module maindec(input logic [5:0] op,
         EXECUTE:        controls <= 15'b001000000000100;
         ALUWRITEBACK:   controls <= 15'b110000000000000;
         BRANCH:         controls <= 15'b001001000000001;
+        ADDIEX:         controls <= 15'b001100000000000;
       endcase
   
   /*always_comb
