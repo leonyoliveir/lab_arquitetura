@@ -1,7 +1,7 @@
 module datapath(input logic clk, reset,
-                input logic memtoreg, pcsrc, pcen,
+                input logic memtoreg, pcen,
                 input logic alusrcA, regdst,
-                input logic [1:0] alusrcB,
+                input logic [1:0] alusrcB, pcsrc,
                 input logic regwrite, jump, iord, irwrite, 
                 input logic [2:0] alucontrol,
                 output logic zero,
@@ -16,6 +16,13 @@ module datapath(input logic clk, reset,
   logic [31:0] result, wdata;
   logic [31:0] aluresult, aluout;
   logic [31:0] data;
+  logic [31:0] pcjump;
+  logic [31:0] pcjumpaux;
+ 
+  
+  sl2 addrshift({6'b000000, instr[25:0]}, pcjumpaux);
+  assign pcjump = {pc[31:28], pcjumpaux[27:0]};
+  
 
   // next PC logic
   reg1 #(32) pcregenable(clk, reset, pcen, pcnext, pc);
@@ -23,7 +30,7 @@ module datapath(input logic clk, reset,
   reg1 #(32) instuctreg(clk, reset, irwrite, readdata, instr);
   reg2 #(32) datareg(clk, reset, readdata, data);
   sl2 immsh(signimm, signimmsh);
-  mux2 #(32) pcmux(aluresult, aluout, pcsrc, pcnext);
+  mux4 #(32) pcmux(aluresult, aluout, pcjump, 32'b0, pcsrc, pcnext);
   
   // register file logic
   regfile rf(clk, regwrite, instr[25:21], instr[20:16], writereg, wdata, aread, writedata);
