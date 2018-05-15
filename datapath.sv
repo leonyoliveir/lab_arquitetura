@@ -36,7 +36,7 @@ module datapath(input logic clk, reset,
   regfile rf(clk, regwrite, instr[25:21], instr[20:16], writereg, wdata, aread, writedata);
   mux2 #(5) wrmux(instr[20:16], instr[15:11], regdst, writereg);
   reg2 #(32) areg(clk, reset, aread, aout);
-  reg2 #(32) breg(clik, reset, writedata, bout);
+  reg2 #(32) breg(clk, reset, writedata, bout);
   mux2 #(32) wrdata(aluout, data, memtoreg, wdata); 
   signext se(instr[15:0], signimm);
 
